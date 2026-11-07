@@ -1,9 +1,16 @@
 import express from "express";
+import cors from "cors";
 import type { Request, Response } from "express";
 import authRoutes from "./modules/auth/auth.routes";
 import { errorHandler } from "./middlewares/error.middleware";
 
 const app = express();
+app.use(
+  cors({
+    origin: "*",
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 app.use("/auth", authRoutes);
