@@ -1,14 +1,14 @@
 import { Request, Response, NextFunction } from "express";
-import { registerUser } from "./auth.service";
+import { getCurrentUser, registerUser } from "./auth.service";
 import { RegisterInput } from "./auth.validation";
 import { loginUser } from "./auth.service";
 import { LoginInput } from "./auth.validation";
+import { AuthRequest } from "./auth.middleware";
 
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax" as const,
-  path: "/api/v1/auth",
+  secure: false,
+  sameSite: "none" as const,
 };
 export const login = async (
   req: Request,
@@ -57,6 +57,42 @@ export const register = async (
     return res.status(201).json({
       success: true,
       message: "Registration successful",
+      data: {
+        user,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const me = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = req.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    const user = await getCurrentUser(userId);
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User no longer exists",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User retrieved successfully",
       data: {
         user,
       },

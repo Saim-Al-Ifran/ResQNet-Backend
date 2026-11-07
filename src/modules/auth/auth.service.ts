@@ -11,6 +11,7 @@ const REFRESH_TOKEN_EXPIRES_IN = "7d";
 
 const ACCESS_TOKEN_MAX_AGE = 60 * 60 * 1000;
 const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+
 const getJwtSecrets = () => {
   const accessSecret = process.env.JWT_ACCESS_SECRET;
   const refreshSecret = process.env.JWT_REFRESH_SECRET;
@@ -123,6 +124,25 @@ export const registerUser = async (data: RegisterInput) => {
       email,
       passwordHash,
       phoneNumber,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phoneNumber: true,
+      imgUrl: true,
+      role: true,
+      createdAt: true,
+    },
+  });
+
+  return user;
+};
+
+export const getCurrentUser = async (userId: string) => {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
     },
     select: {
       id: true,
