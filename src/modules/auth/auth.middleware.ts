@@ -11,8 +11,8 @@ export const authenticate = (
   next: NextFunction
 ) => {
   try {
-    const token = req.cookies?.accessToken;
-    console.log(req.cookies)
+    const authHeader = req.headers.authorization;
+    let token = req.cookies.accessToken || (authHeader && authHeader.split(' ')[1]);
     if (!token) {
       return res.status(401).json({
         success: false,

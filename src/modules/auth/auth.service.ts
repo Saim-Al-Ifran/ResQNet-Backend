@@ -157,3 +157,15 @@ export const getCurrentUser = async (userId: string) => {
 
   return user;
 };
+
+export const logoutService = async (refreshToken: string) => {
+  await prisma.refreshToken.updateMany({
+    where: {
+      tokenHash: hashToken(refreshToken),
+      revokedAt: null,
+    },
+    data: {
+      revokedAt: new Date(),
+    },
+  });
+};
