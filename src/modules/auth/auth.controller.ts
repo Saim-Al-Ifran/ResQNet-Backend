@@ -1,10 +1,17 @@
 import { Request, Response, NextFunction } from "express";
-import { getCurrentUser, logoutService, registerUser } from "./auth.service";
+import {
+  getCurrentUser,
+  logoutService,
+  refreshUserTokens,
+  registerUser,
+  ACCESS_TOKEN_MAX_AGE,
+  REFRESH_TOKEN_MAX_AGE
+} from "./auth.service";
 import { RegisterInput } from "./auth.validation";
 import { loginUser } from "./auth.service";
 import { LoginInput } from "./auth.validation";
 import { AuthRequest } from "./auth.middleware";
-
+ 
 const cookieOptions = {
   httpOnly: true,
   secure: false,
@@ -133,6 +140,58 @@ export const logout = async (
     console.error("Logout error:", error);
 
     res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+export const refreshToken = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const token = req.cookies?.refreshToken;
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Refresh token is required",
+      });
+    }
+
+    const tokens = await refreshUserTokens(token);
+
+    res.cookie("accessToken", tokens.accessToken, {
+      ...cookieOptions,
+      maxAge: ACCESS_TOKEN_MAX_AGE,
+    });
+
+    res.cookie("refreshToken", tokens.refreshToken, {
+      ...cookieOptions,
+      maxAge: REFRESH_TOKEN_MAX_AGE,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Tokens refreshed successfully",
+    });
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "INVALID_REFRESH_TOKEN"
+    ) {
+      res.clearCookie("refreshToken", cookieOptions);
+
+      return res.status(401).json({
+        success: false,
+        message: "Invalid or expired refresh token",
+      });
+    }
+
+    console.error("Refresh token error:", error);
+
+    return res.status(500).json({
       success: false,
       message: "Internal server error",
     });
